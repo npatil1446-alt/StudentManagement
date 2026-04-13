@@ -5,8 +5,9 @@ echo =========================================
 
 :: -----------------------------------------------
 :: Railway MySQL (Public URL) - shared cloud DB
+:: NOTE: & must be escaped as ^& in batch files
 :: -----------------------------------------------
-set DB_URL=jdbc:mysql://turntable.proxy.rlwy.net:16422/railway?allowPublicKeyRetrieval=true&useSSL=false
+set DB_URL=jdbc:mysql://turntable.proxy.rlwy.net:16422/railway?allowPublicKeyRetrieval=true^&useSSL=false
 set DB_USER=root
 set DB_PASSWORD=HTmsspvYJQbsoqVSPFbQUb8rVoxEEyKV
 
@@ -16,12 +17,17 @@ set DB_PASSWORD=HTmsspvYJQbsoqVSPFbQUb8rVoxEEyKV
 where mvn >nul 2>&1
 if %errorlevel% neq 0 (
     echo Maven not found. Downloading Maven 3.9.6 locally...
-    if not exist ".mvn-local" mkdir .mvn-local
+    if not exist ".mvn-local" mkdir ".mvn-local"
     if not exist ".mvn-local\apache-maven-3.9.6" (
-        powershell -Command "Invoke-WebRequest -Uri 'https://downloads.apache.org/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip' -OutFile '.mvn-local\maven.zip'"
+        powershell -Command "Invoke-WebRequest -Uri 'https://archive.apache.org/dist/maven/maven-3/3.9.6/binaries/apache-maven-3.9.6-bin.zip' -OutFile '.mvn-local\maven.zip'"
+        if not exist ".mvn-local\maven.zip" (
+            echo ERROR: Maven download failed. Check your internet connection.
+            pause
+            exit /b 1
+        )
         powershell -Command "Expand-Archive -Path '.mvn-local\maven.zip' -DestinationPath '.mvn-local' -Force"
-        del .mvn-local\maven.zip
-        echo Maven downloaded successfully!
+        del ".mvn-local\maven.zip"
+        echo Maven downloaded and ready!
     ) else (
         echo Using cached local Maven...
     )
@@ -34,7 +40,7 @@ if %errorlevel% neq 0 (
 :: Build fat JAR
 :: -----------------------------------------------
 echo Building project...
-call %MVN_CMD% -B -DskipTests clean package -q
+call "%MVN_CMD%" -B -DskipTests clean package -q
 
 if %errorlevel% neq 0 (
     echo BUILD FAILED. Check the errors above.
@@ -43,8 +49,8 @@ if %errorlevel% neq 0 (
 )
 
 echo Build successful! Starting server...
-echo Backend will be available at: http://localhost:8080
-echo Press Ctrl+C to stop the server.
+echo Backend available at: http://localhost:8080
+echo Press Ctrl+C to stop.
 echo =========================================
 java -jar target\smartedu-backend-1.0.0.jar
 pause
