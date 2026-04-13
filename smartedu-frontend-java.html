@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartEdu Manager - Engineering College Portal</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: #0f1623; }
+
+        /* LOGIN PAGE STYLES */
+        .login-bg {
+            background: #0a0f1e;
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .login-bg::before {
+            content: '';
+            position: absolute;
+            top: -30%;
+            left: -20%;
+            width: 700px;
+            height: 700px;
+            background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .login-bg::after {
+            content: '';
+            position: absolute;
+            bottom: -20%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(16,185,129,0.13) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .login-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.09);
+            backdrop-filter: blur(24px);
+            border-radius: 24px;
+        }
+        .role-btn {
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            padding: 14px 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            color: #94a3b8;
+        }
+        .role-btn:hover { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.08); color: #c7d2fe; }
+        .role-btn.active { border-color: #6366f1; background: rgba(99,102,241,0.15); color: #a5b4fc; }
+        .role-btn .role-icon { font-size: 1.8rem; margin-bottom: 6px; }
+        .role-btn .role-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+        .login-input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .login-input::placeholder { color: #475569; }
+        .login-input:focus { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.25s ease;
+            letter-spacing: 0.02em;
+        }
+        .login-btn-admin { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; }
+        .login-btn-teacher { background: linear-gradient(135deg, #0ea5e9, #6366f1); color: white; }
+        .login-btn-student { background: linear-gradient(135deg, #10b981, #0ea5e9); color: white; }
+        .login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99,102,241,0.4); }
+        .login-notice {
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.82rem;
+            color: #a5b4fc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .login-label { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
+        .error-box {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: #fca5a5;
+            font-size: 0.85rem;
+        }
+        .divider-line { height: 1px; background: rgba(255,255,255,0.07); }
+
+        /* PORTAL HEADER & NAV */
+        .portal-header {
+            background: rgba(15,22,35,0.97);
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .portal-bg { background: #0f1623; min-height: 100vh; }
+        .glass { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(10px); border-radius: 16px; }
+        .glass-light { background: rgba(255,255,255,0.97); border-radius: 16px; }
+        .nav-btn { padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; border: none; }
+        .nav-btn-active { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+        .nav-btn-inactive { background: transparent; color: #64748b; border: 1px solid transparent; }
+        .nav-btn-inactive:hover { background: rgba(255,255,255,0.05); color: #94a3b8; }
+
+        /* ADMIN DASHBOARD STYLES */
+        .stat-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; transition: all 0.25s; }
+        .stat-card:hover { border-color: rgba(99,102,241,0.3); background: rgba(99,102,241,0.06); }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .badge-admin { background: rgba(139,92,246,0.2); color: #c4b5fd; border: 1px solid rgba(139,92,246,0.3); }
+        .badge-teacher { background: rgba(14,165,233,0.2); color: #7dd3fc; border: 1px solid rgba(14,165,233,0.3); }
+        .badge-student { background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.3); }
+
+        /* FORMS */
+        .form-input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .form-input::placeholder { color: #475569; }
+        .form-input:focus { border-color: #6366f1; background: rgba(99,102,241,0.08); }
+        .form-label { font-size: 0.8rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: block; }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 10px 20px; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+        .btn-danger { background: rgba(239,68,68,0.15); color: #f87171; padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.25); font-weight: 600; cursor: pointer; font-size: 0.83rem; transition: all 0.2s; }
+        .btn-danger:hover { background: rgba(239,68,68,0.25); }
+        .btn-edit { background: rgba(99,102,241,0.15); color: #a5b4fc; padding: 7px 14px; border-radius: 8px; border: 1px solid rgba(99,102,241,0.25); font-weight: 600; cursor: pointer; font-size: 0.83rem; transition: all 0.2s; }
+        .btn-edit:hover { background: rgba(99,102,241,0.25); }
+
+        /* TABLE */
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th { text-align: left; padding: 12px 16px; font-size: 0.75rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid rgba(255,255,255,0.07); }
+        .data-table td { padding: 14px 16px; font-size: 0.88rem; color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+        .modal-box { background: #151e2e; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto; }
+
+        /* STUDENT/TEACHER DASHBOARDS */
+        .progress-bar { transition: width 1s ease-out; }
+
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeSlideUp 0.4s ease-out; }
+
+        /* CREDENTIAL CARD */
+        .cred-card { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 14px; padding: 20px; }
+        .cred-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+        .cred-item:last-child { border-bottom: none; }
+        .cred-label { font-size: 0.78rem; font-weight: 600; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.06em; }
+        .cred-value { font-family: 'Space Grotesk', monospace; font-weight: 600; color: #e2e8f0; font-size: 0.95rem; background: rgba(255,255,255,0.07); padding: 4px 12px; border-radius: 6px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 10px; }
+
+        /* Grid dots background on login */
+        .dots-bg {
+            background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+
+        // ─── API BASE URL ─────────────────────────────────────────────────────────────
+        // Change this to your deployed Java backend URL in production
+        const API_BASE = 'http://localhost:8080/api';
+
+        // ─── API HELPER ───────────────────────────────────────────────────────────────
+        const api = {
+            get: (path) => fetch(`${API_BASE}${path}`).then(r => r.json()),
+            post: (path, body) => fetch(`${API_BASE}${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(r => r.json()),
+            delete: (path) => fetch(`${API_BASE}${path}`, { method: 'DELETE' }).then(r => r.json()),
+            put: (path, body) => fetch(`${API_BASE}${path}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            }).then(r => r.json()),
+        };
+
+        // ─── MAIN APP ─────────────────────────────────────────────────────────────────
+
+        function App() {
+            const [currentUser, setCurrentUser] = useState(null);
+            const handleLogin = (user) => setCurrentUser(user);
+            const handleLogout = () => setCurrentUser(null);
+
+            return (
+                <div>
+                    {!currentUser
+                        ? <LoginPage onLogin={handleLogin} />
+                        : <Dashboard user={currentUser} onLogout={handleLogout} />
+                    }
+                </div>
+            );
+        }
+
+        // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
+
+        function LoginPage({ onLogin }) {
+            const [role, setRole] = useState('student');
+            const [userId, setUserId] = useState('');
+            const [password, setPassword] = useState('');
+            const [showPwd, setShowPwd] = useState(false);
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const roles = [
+                { key: 'admin', icon: '🛡️', label: 'Admin' },
+                { key: 'teacher', icon: '👨‍🏫', label: 'Teacher' },
+                { key: 'student', icon: '🎓', label: 'Student' },
+            ];
+
+            const btnClass = { admin: 'login-btn-admin', teacher: 'login-btn-teacher', student: 'login-btn-student' };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+                try {
+                    const res = await api.post('/auth/login', { userId: userId.trim(), password, role });
+                    if (res.success) {
+                        onLogin(res.user);
+                    } else {
+                        setError(res.message || 'Login failed.');
+                    }
+                } catch (err) {
+                    setError('Cannot connect to server. Make sure the Java backend is running on port 8080.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            const placeholders = { admin: 'e.g. ADMIN001', teacher: 'e.g. TCH2026001', student: 'e.g. STU2026001' };
+
+            return (
+                <div className="login-bg dots-bg flex items-center justify-center min-h-screen p-4">
+                    <div className="w-full max-w-md animate-in">
+                        <div className="text-center mb-8">
+                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+                                style={{background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)'}}>
+                                <span style={{fontSize: '2rem'}}>🎓</span>
+                            </div>
+                            <h1 className="text-3xl font-extrabold text-white mb-1" style={{fontFamily: 'Space Grotesk'}}>
+                                SmartEdu Manager
+                            </h1>
+                            <p className="text-slate-400 text-sm font-medium tracking-wide">Engineering College Portal</p>
+                        </div>
+
+                        <div className="login-card p-8">
+                            <div className="login-notice mb-6">
+                                <span style={{fontSize:'1.1rem'}}>🔐</span>
+                                <span>Use the <strong>User ID and Password</strong> provided by the Admin to sign in.</span>
+                            </div>
+
+                            <div className="mb-6">
+                                <p className="login-label">Select Your Role</p>
+                                <div className="grid grid-cols-3 gap-3">
+                                    {roles.map(r => (
+                                        <button key={r.key} type="button"
+                                            className={`role-btn ${role === r.key ? 'active' : ''}`}
+                                            onClick={() => { setRole(r.key); setError(''); setUserId(''); setPassword(''); }}>
+                                            <div className="role-icon">{r.icon}</div>
+                                            <div className="role-label">{r.label}</div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="divider-line mb-6"></div>
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <label className="login-label">User ID</label>
+                                    <input
+                                        className="login-input"
+                                        type="text"
+                                        value={userId}
+                                        onChange={e => setUserId(e.target.value)}
+                                        placeholder={placeholders[role]}
+                                        required
+                                        autoComplete="username"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="login-label">Password</label>
+                                    <div style={{position:'relative'}}>
+                                        <input
+                                            className="login-input"
+                                            type={showPwd ? 'text' : 'password'}
+                                            value={password}
+                                            onChange={e => setPassword(e.target.value)}
+                                            placeholder="Enter your password"
+                                            required
+                                            autoComplete="current-password"
+                                            style={{paddingRight: '44px'}}
+                                        />
+                                        <button type="button" onClick={() => setShowPwd(!showPwd)}
+                                            style={{position:'absolute', right:'12px', top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#64748b', fontSize:'1rem'}}>
+                                            {showPwd ? '🙈' : '👁️'}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {error && <div className="error-box">⚠️ {error}</div>}
+
+                                <button type="submit" className={`login-btn ${btnClass[role]}`} disabled={loading}>
+                                    {loading ? '⏳ Signing in...' : `Sign In as ${roles.find(r2=>r2.key===role).label}`}
+                                </button>
+                            </form>
+
+                            <div className="mt-6 text-center">
+                                <p className="text-slate-600 text-xs">
+                                    Don't have credentials? Contact your college administrator.
+                                </p>
+                            </div>
+                        </div>
+
+                        <p className="text-center text-slate-700 text-xs mt-5">
+                            © 2026 SmartEdu Manager · All rights reserved
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── MAIN DASHBOARD ───────────────────────────────────────────────────────────
+
+        function Dashboard({ user, onLogout }) {
+            const [activePage, setActivePage] = useState('dashboard');
+            const [attendance, setAttendance] = useState([]);
+            const [exams, setExams] = useState([]);
+            const [notes, setNotes] = useState([]);
+            const [allUsers, setAllUsers] = useState([]);
+
+            const loadData = async () => {
+                try {
+                    const [att, ex, nt, users] = await Promise.all([
+                        api.get('/attendance'),
+                        api.get('/exams'),
+                        api.get('/notes'),
+                        api.get('/users'),
+                    ]);
+                    setAttendance(att);
+                    setExams(ex);
+                    setNotes(nt);
+                    setAllUsers(users);
+                } catch (e) {
+                    console.error('Failed to load data', e);
+                }
+            };
+
+            useEffect(() => { loadData(); }, [activePage]);
+
+            const userAttendance = user.role === 'student'
+                ? attendance.filter(a => a.studentId === user.userId)
+                : attendance;
+            const userExams = user.role === 'student'
+                ? exams.filter(e => e.studentId === user.userId)
+                : exams;
+
+            const roleLabel = { admin: 'Administrator', teacher: 'Faculty', student: 'Student' };
+            const roleColor = { admin: '#8b5cf6', teacher: '#0ea5e9', student: '#10b981' };
+            const roleBadgeClass = { admin: 'badge-admin', teacher: 'badge-teacher', student: 'badge-student' };
+
+            const navItems = user.role === 'admin' ? [
+                { key: 'dashboard', label: '📊 Overview' },
+                { key: 'manage-users', label: '👥 Manage Users' },
+            ] : user.role === 'teacher' ? [
+                { key: 'dashboard', label: '📊 Dashboard' },
+                { key: 'manage-attendance', label: '✅ Mark Attendance' },
+                { key: 'attendance-analysis', label: '📈 Analysis' },
+                { key: 'manage-marks', label: '📝 Add Marks' },
+                { key: 'upload-notes', label: '📁 Upload Notes' },
+                { key: 'view-students', label: '👥 Students' },
+            ] : [
+                { key: 'dashboard', label: '📊 Dashboard' },
+                { key: 'attendance', label: '📅 Attendance' },
+                { key: 'exams', label: '📝 Exams' },
+                { key: 'notes', label: '📚 Study Notes' },
+                { key: 'progress', label: '📈 Progress' },
+            ];
+
+            return (
+                <div className="portal-bg min-h-screen">
+                    <div className="portal-header px-6 py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+                                style={{background: `linear-gradient(135deg, ${roleColor[user.role]}, ${roleColor[user.role]}aa)`}}>
+                                {user.role === 'admin' ? '🛡️' : user.role === 'teacher' ? '👨‍🏫' : '🎓'}
+                            </div>
+                            <div>
+                                <h1 className="text-white font-bold text-sm" style={{fontFamily: 'Space Grotesk'}}>SmartEdu Manager</h1>
+                                <p className="text-slate-500 text-xs">Engineering College Portal</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="text-right hidden sm:block">
+                                <p className="text-white text-sm font-semibold">{user.name}</p>
+                                <span className={`badge ${roleBadgeClass[user.role]}`}>{roleLabel[user.role]}</span>
+                            </div>
+                            <button onClick={onLogout}
+                                className="btn-danger" style={{padding:'8px 16px', fontSize:'0.83rem'}}>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style={{borderBottom:'1px solid rgba(255,255,255,0.06)', background:'rgba(15,22,35,0.8)'}}>
+                        <div className="max-w-7xl mx-auto px-6 py-3 flex gap-2 overflow-x-auto">
+                            {navItems.map(item => (
+                                <button key={item.key} onClick={() => setActivePage(item.key)}
+                                    className={`nav-btn ${activePage === item.key ? 'nav-btn-active' : 'nav-btn-inactive'}`}
+                                    style={{whiteSpace:'nowrap'}}>
+                                    {item.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-6 py-8 animate-in">
+                        {/* ADMIN PAGES */}
+                        {user.role === 'admin' && activePage === 'dashboard' && <AdminDashboard allUsers={allUsers} attendance={attendance} exams={exams} notes={notes} />}
+                        {user.role === 'admin' && activePage === 'manage-users' && <ManageUsersPage onRefresh={loadData} />}
+
+                        {/* TEACHER PAGES */}
+                        {user.role === 'teacher' && activePage === 'dashboard' && <DashboardContent user={user} attendance={userAttendance} exams={userExams} allUsers={allUsers} attendance_all={attendance} exams_all={exams} notes_all={notes} />}
+                        {user.role === 'teacher' && activePage === 'manage-attendance' && <ManageAttendancePage onRefresh={loadData} allUsers={allUsers} />}
+                        {user.role === 'teacher' && activePage === 'attendance-analysis' && <AttendanceAnalysisPage attendance={attendance} allUsers={allUsers} />}
+                        {user.role === 'teacher' && activePage === 'manage-marks' && <ManageMarksPage onRefresh={loadData} allUsers={allUsers} />}
+                        {user.role === 'teacher' && activePage === 'upload-notes' && <UploadNotesPage onRefresh={loadData} user={user} />}
+                        {user.role === 'teacher' && activePage === 'view-students' && <ViewStudentsPage allUsers={allUsers} />}
+
+                        {/* STUDENT PAGES */}
+                        {user.role === 'student' && activePage === 'dashboard' && <DashboardContent user={user} attendance={userAttendance} exams={userExams} allUsers={allUsers} attendance_all={attendance} exams_all={exams} notes_all={notes} />}
+                        {user.role === 'student' && activePage === 'attendance' && <AttendancePage attendance={userAttendance} />}
+                        {user.role === 'student' && activePage === 'exams' && <ExamsPage exams={userExams} />}
+                        {user.role === 'student' && activePage === 'notes' && <NotesPage notes={notes} userClass={user.year} userBranch={user.branch} />}
+                        {user.role === 'student' && activePage === 'progress' && <ProgressPage attendance={userAttendance} exams={userExams} />}
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── ADMIN: OVERVIEW DASHBOARD ────────────────────────────────────────────────
+
+        function AdminDashboard({ allUsers, attendance, exams, notes }) {
+            const students = allUsers.filter(u => u.role === 'student');
+            const teachers = allUsers.filter(u => u.role === 'teacher');
+
+            const stats = [
+                { label: 'Total Students', value: students.length, icon: '🎓', color: '#10b981', sub: 'Enrolled' },
+                { label: 'Total Teachers', value: teachers.length, icon: '👨‍🏫', color: '#0ea5e9', sub: 'Faculty' },
+                { label: 'Attendance Records', value: attendance.length, icon: '📊', color: '#6366f1', sub: 'Entries' },
+                { label: 'Study Materials', value: notes.length, icon: '📚', color: '#f59e0b', sub: 'Uploaded' },
+            ];
+
+            return (
+                <div className="space-y-8">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-1" style={{fontFamily:'Space Grotesk'}}>Admin Overview</h2>
+                        <p className="text-slate-500 text-sm">System-wide statistics and quick insights</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => (
+                            <div key={i} className="stat-card">
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl"
+                                        style={{background: `${s.color}22`}}>
+                                        {s.icon}
+                                    </div>
+                                    <span className="text-xs font-medium text-slate-600 uppercase tracking-wider">{s.sub}</span>
+                                </div>
+                                <div className="text-3xl font-bold text-white mb-1" style={{fontFamily:'Space Grotesk'}}>{s.value}</div>
+                                <div className="text-slate-400 text-sm">{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="glass p-6">
+                        <h3 className="text-lg font-bold text-white mb-4">Recently Added Accounts</h3>
+                        {[...students, ...teachers].length === 0 ? (
+                            <p className="text-slate-500 text-sm py-6 text-center">No accounts created yet. Go to Manage Users to add students and teachers.</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User ID</th><th>Name</th><th>Role</th><th>Dept / Year</th><th>Created</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[...students, ...teachers]
+                                            .sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))
+                                            .slice(0,8)
+                                            .map(u => (
+                                            <tr key={u.id}>
+                                                <td><span className="cred-value" style={{fontSize:'0.82rem'}}>{u.userId}</span></td>
+                                                <td className="font-medium text-white">{u.name}</td>
+                                                <td><span className={`badge ${u.role === 'teacher' ? 'badge-teacher' : 'badge-student'}`}>{u.role === 'teacher' ? 'Teacher' : 'Student'}</span></td>
+                                                <td className="text-slate-400">{u.role === 'teacher' ? (u.department || '—') : `${u.year || ''} · ${u.branch || ''}`}</td>
+                                                <td className="text-slate-500">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN') : '—'}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── ADMIN: MANAGE USERS PAGE ─────────────────────────────────────────────────
+
+        function ManageUsersPage({ onRefresh }) {
+            const [tab, setTab] = useState('students');
+            const [users, setUsers] = useState([]);
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [showEditModal, setShowEditModal] = useState(false);
+            const [showCredModal, setShowCredModal] = useState(false);
+            const [editUser, setEditUser] = useState(null);
+            const [newCred, setNewCred] = useState(null);
+
+            const refresh = async () => {
+                const data = await api.get('/users');
+                setUsers(data);
+            };
+
+            useEffect(() => { refresh(); }, []);
+
+            const students = users.filter(u => u.role === 'student');
+            const teachers = users.filter(u => u.role === 'teacher');
+
+            const handleDelete = async (userId) => {
+                if (!confirm('Are you sure you want to delete this account? This action cannot be undone.')) return;
+                const user = users.find(u => u.userId === userId);
+                if (!user) return;
+                await api.delete(`/users/${user.id}`);
+                refresh();
+                onRefresh();
+            };
+
+            const handleEdit = (user) => { setEditUser({...user}); setShowEditModal(true); };
+
+            return (
+                <div className="space-y-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-white" style={{fontFamily:'Space Grotesk'}}>Manage Users</h2>
+                            <p className="text-slate-500 text-sm">Create and manage student & teacher accounts</p>
+                        </div>
+                        <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+                            + Add New Account
+                        </button>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {['students', 'teachers'].map(t => (
+                            <button key={t} onClick={() => setTab(t)}
+                                className={`nav-btn ${tab === t ? 'nav-btn-active' : 'nav-btn-inactive'}`}
+                                style={{textTransform:'capitalize'}}>
+                                {t === 'students' ? `🎓 Students (${students.length})` : `👨‍🏫 Teachers (${teachers.length})`}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="glass p-6">
+                        <div className="overflow-x-auto">
+                            {tab === 'students' ? (
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User ID</th><th>Name</th><th>Year</th><th>Branch</th><th>Roll No</th><th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {students.length === 0 ? (
+                                            <tr><td colSpan="6" className="text-center text-slate-500 py-10">No students added yet.</td></tr>
+                                        ) : students.map(s => (
+                                            <tr key={s.id}>
+                                                <td><span className="cred-value" style={{fontSize:'0.82rem'}}>{s.userId}</span></td>
+                                                <td className="font-medium text-white">{s.name}</td>
+                                                <td>{s.year}</td>
+                                                <td>{s.branch}</td>
+                                                <td>{s.rollNo || '—'}</td>
+                                                <td>
+                                                    <div className="flex gap-2">
+                                                        <button className="btn-edit" onClick={() => handleEdit(s)}>Edit</button>
+                                                        <button className="btn-danger" onClick={() => handleDelete(s.userId)}>Remove</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User ID</th><th>Name</th><th>Department</th><th>Subjects</th><th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {teachers.length === 0 ? (
+                                            <tr><td colSpan="5" className="text-center text-slate-500 py-10">No teachers added yet.</td></tr>
+                                        ) : teachers.map(t => (
+                                            <tr key={t.id}>
+                                                <td><span className="cred-value" style={{fontSize:'0.82rem'}}>{t.userId}</span></td>
+                                                <td className="font-medium text-white">{t.name}</td>
+                                                <td>{t.department || '—'}</td>
+                                                <td className="text-slate-400">{t.subjects || '—'}</td>
+                                                <td>
+                                                    <div className="flex gap-2">
+                                                        <button className="btn-edit" onClick={() => handleEdit(t)}>Edit</button>
+                                                        <button className="btn-danger" onClick={() => handleDelete(t.userId)}>Remove</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+
+                    {showAddModal && (
+                        <AddUserModal
+                            defaultRole={tab === 'students' ? 'student' : 'teacher'}
+                            onClose={() => setShowAddModal(false)}
+                            onSuccess={(cred) => { refresh(); onRefresh(); setShowAddModal(false); setNewCred(cred); setShowCredModal(true); }}
+                        />
+                    )}
+                    {showEditModal && editUser && (
+                        <EditUserModal
+                            user={editUser}
+                            onClose={() => setShowEditModal(false)}
+                            onSuccess={() => { refresh(); onRefresh(); setShowEditModal(false); }}
+                        />
+                    )}
+                    {showCredModal && newCred && (
+                        <CredentialModal cred={newCred} onClose={() => { setShowCredModal(false); setNewCred(null); }} />
+                    )}
+                </div>
+            );
+        }
+
+        // ─── ADD USER MODAL ───────────────────────────────────────────────────────────
+
+        function AddUserModal({ defaultRole, onClose, onSuccess }) {
+            const [role, setRole] = useState(defaultRole);
+            const [form, setForm] = useState({
+                name: '', email: '', rollNo: '', year: '2nd Year', branch: 'Computer Science',
+                department: 'Computer Science', subjects: '', parentEmail: '', parentPhone: ''
+            });
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const f = (k, v) => setForm(p => ({...p, [k]: v}));
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                if (!form.name.trim()) { setError('Name is required.'); return; }
+                setLoading(true);
+                try {
+                    const res = await api.post('/users', { role, ...form });
+                    if (res.success) {
+                        onSuccess({ userId: res.userId, password: res.password, name: form.name, role });
+                    } else {
+                        setError(res.message || 'Failed to create user.');
+                    }
+                } catch (err) {
+                    setError('Server error. Please try again.');
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+                    <div className="modal-box animate-in">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-white" style={{fontFamily:'Space Grotesk'}}>Add New Account</h3>
+                            <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',fontSize:'1.4rem',cursor:'pointer'}}>✕</button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            {['student', 'teacher'].map(r => (
+                                <button key={r} type="button"
+                                    className={`role-btn ${role === r ? 'active' : ''}`}
+                                    onClick={() => setRole(r)}>
+                                    <div className="role-icon">{r === 'student' ? '🎓' : '👨‍🏫'}</div>
+                                    <div className="role-label">{r === 'student' ? 'Student' : 'Teacher'}</div>
+                                </button>
+                            ))}
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="form-label">Full Name *</label>
+                                <input className="form-input" value={form.name} onChange={e => f('name', e.target.value)} placeholder="e.g. Priya Sharma" required />
+                            </div>
+                            <div>
+                                <label className="form-label">Email</label>
+                                <input className="form-input" type="email" value={form.email} onChange={e => f('email', e.target.value)} placeholder="e.g. priya@college.edu" />
+                            </div>
+
+                            {role === 'student' ? (<>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="form-label">Year</label>
+                                        <select className="form-input" value={form.year} onChange={e => f('year', e.target.value)}>
+                                            {['1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Roll No</label>
+                                        <input className="form-input" value={form.rollNo} onChange={e => f('rollNo', e.target.value)} placeholder="e.g. CS2024001" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Branch</label>
+                                    <select className="form-input" value={form.branch} onChange={e => f('branch', e.target.value)}>
+                                        {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="form-label">Parent Email</label>
+                                        <input className="form-input" value={form.parentEmail} onChange={e => f('parentEmail', e.target.value)} placeholder="parent@gmail.com" />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Parent Phone</label>
+                                        <input className="form-input" value={form.parentPhone} onChange={e => f('parentPhone', e.target.value)} placeholder="+91..." />
+                                    </div>
+                                </div>
+                            </>) : (<>
+                                <div>
+                                    <label className="form-label">Department</label>
+                                    <select className="form-input" value={form.department} onChange={e => f('department', e.target.value)}>
+                                        {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(d=><option key={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="form-label">Subjects (comma-separated)</label>
+                                    <input className="form-input" value={form.subjects} onChange={e => f('subjects', e.target.value)} placeholder="e.g. Data Structures, DBMS" />
+                                </div>
+                            </>)}
+
+                            {error && <div className="error-box">⚠️ {error}</div>}
+
+                            <div style={{paddingTop:'8px', display:'flex', gap:'12px'}}>
+                                <button type="button" onClick={onClose}
+                                    style={{flex:1, padding:'12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'#64748b', cursor:'pointer', fontWeight:600}}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-primary" style={{flex:1, padding:'12px'}} disabled={loading}>
+                                    {loading ? 'Creating...' : 'Create Account'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── EDIT USER MODAL ──────────────────────────────────────────────────────────
+
+        function EditUserModal({ user, onClose, onSuccess }) {
+            const [form, setForm] = useState({...user});
+            const [loading, setLoading] = useState(false);
+            const f = (k, v) => setForm(p => ({...p, [k]: v}));
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    await api.put(`/users/${user.id}`, form);
+                    onSuccess();
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+                    <div className="modal-box animate-in">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-white" style={{fontFamily:'Space Grotesk'}}>Edit Account</h3>
+                            <button onClick={onClose} style={{background:'none',border:'none',color:'#64748b',fontSize:'1.4rem',cursor:'pointer'}}>✕</button>
+                        </div>
+                        <div className="cred-card mb-5">
+                            <div className="cred-item"><span className="cred-label">User ID</span><span className="cred-value">{user.userId}</span></div>
+                            <div className="cred-item"><span className="cred-label">Role</span><span className={`badge ${user.role === 'teacher' ? 'badge-teacher' : 'badge-student'}`}>{user.role}</span></div>
+                        </div>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="form-label">Full Name</label>
+                                <input className="form-input" value={form.name} onChange={e => f('name', e.target.value)} required />
+                            </div>
+                            <div>
+                                <label className="form-label">Email</label>
+                                <input className="form-input" type="email" value={form.email || ''} onChange={e => f('email', e.target.value)} />
+                            </div>
+                            {user.role === 'student' ? (<>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="form-label">Year</label>
+                                        <select className="form-input" value={form.year} onChange={e => f('year', e.target.value)}>
+                                            {['1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Roll No</label>
+                                        <input className="form-input" value={form.rollNo || ''} onChange={e => f('rollNo', e.target.value)} />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Branch</label>
+                                    <select className="form-input" value={form.branch} onChange={e => f('branch', e.target.value)}>
+                                        {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                    </select>
+                                </div>
+                            </>) : (
+                                <div>
+                                    <label className="form-label">Department</label>
+                                    <select className="form-input" value={form.department || ''} onChange={e => f('department', e.target.value)}>
+                                        {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(d=><option key={d}>{d}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                            <div>
+                                <label className="form-label">Reset Password</label>
+                                <input className="form-input" value={form.password} onChange={e => f('password', e.target.value)} placeholder="Leave as-is or enter new password" />
+                            </div>
+                            <div style={{paddingTop:'8px', display:'flex', gap:'12px'}}>
+                                <button type="button" onClick={onClose}
+                                    style={{flex:1, padding:'12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'#64748b', cursor:'pointer', fontWeight:600}}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn-primary" style={{flex:1, padding:'12px'}} disabled={loading}>
+                                    {loading ? 'Saving...' : 'Save Changes'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── CREDENTIAL MODAL ─────────────────────────────────────────────────────────
+
+        function CredentialModal({ cred, onClose }) {
+            const [copied, setCopied] = useState(false);
+
+            const copyAll = () => {
+                const text = `SmartEdu Manager - Login Credentials\nName: ${cred.name}\nRole: ${cred.role}\nUser ID: ${cred.userId}\nPassword: ${cred.password}\n\nLogin at the college portal using the User ID and Password above.`;
+                navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2500); });
+            };
+
+            return (
+                <div className="modal-overlay">
+                    <div className="modal-box animate-in">
+                        <div className="text-center mb-6">
+                            <div className="text-5xl mb-3">✅</div>
+                            <h3 className="text-xl font-bold text-white" style={{fontFamily:'Space Grotesk'}}>Account Created!</h3>
+                            <p className="text-slate-400 text-sm mt-1">Share these credentials with <strong className="text-white">{cred.name}</strong></p>
+                        </div>
+
+                        <div className="cred-card mb-6">
+                            <div className="cred-item">
+                                <span className="cred-label">Role</span>
+                                <span className={`badge ${cred.role === 'teacher' ? 'badge-teacher' : 'badge-student'}`}>{cred.role}</span>
+                            </div>
+                            <div className="cred-item">
+                                <span className="cred-label">User ID</span>
+                                <span className="cred-value">{cred.userId}</span>
+                            </div>
+                            <div className="cred-item">
+                                <span className="cred-label">Password</span>
+                                <span className="cred-value">{cred.password}</span>
+                            </div>
+                        </div>
+
+                        <div style={{background:'rgba(245,158,11,0.08)', border:'1px solid rgba(245,158,11,0.2)', borderRadius:'10px', padding:'12px 16px', marginBottom:'20px'}}>
+                            <p className="text-yellow-400 text-xs">⚠️ <strong>Important:</strong> Copy and securely share these credentials with the user. The password cannot be recovered later (only reset).</p>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button onClick={copyAll} className="btn-primary" style={{flex:1, padding:'12px'}}>
+                                {copied ? '✓ Copied!' : '📋 Copy Credentials'}
+                            </button>
+                            <button onClick={onClose} style={{flex:1, padding:'12px', borderRadius:'10px', border:'1px solid rgba(255,255,255,0.1)', background:'transparent', color:'#94a3b8', cursor:'pointer', fontWeight:600}}>
+                                Done
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── SHARED DASHBOARD CONTENT ─────────────────────────────────────────────────
+
+        function DashboardContent({ user, attendance, exams, allUsers, attendance_all, exams_all, notes_all }) {
+            const presentCount = attendance.filter(a => a.status === 'present').length;
+            const totalClasses = attendance.length;
+            const attendanceRate = totalClasses > 0 ? Math.round((presentCount / totalClasses) * 100) : 0;
+
+            const totalScore = exams.reduce((s, e) => s + e.score, 0);
+            const totalMax = exams.reduce((s, e) => s + e.maxScore, 0);
+            const avgScore = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+
+            const stats = user.role === 'student' ? [
+                { label: 'Attendance Rate', value: `${attendanceRate}%`, icon: '📊', color: '#6366f1' },
+                { label: 'Average Score', value: `${avgScore}%`, icon: '📈', color: '#10b981' },
+                { label: 'Total Exams', value: exams.length, icon: '📝', color: '#f59e0b' },
+                { label: 'Classes Attended', value: presentCount, icon: '📚', color: '#0ea5e9' },
+            ] : [
+                { label: 'Total Students', value: allUsers.filter(u => u.role === 'student').length, icon: '👥', color: '#10b981' },
+                { label: 'Attendance Records', value: attendance_all.length, icon: '📊', color: '#6366f1' },
+                { label: 'Exam Records', value: exams_all.length, icon: '📝', color: '#f59e0b' },
+                { label: 'Study Materials', value: notes_all.length, icon: '📚', color: '#0ea5e9' },
+            ];
+
+            return (
+                <div className="space-y-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-white mb-1" style={{fontFamily:'Space Grotesk'}}>
+                            Welcome back, {user.name.split(' ')[0]}! 👋
+                        </h2>
+                        <p className="text-slate-500 text-sm">
+                            {user.role === 'student' ? `${user.year} · ${user.branch} · Roll: ${user.rollNo || 'N/A'}` : `${user.department || ''} Department`}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        {stats.map((s, i) => (
+                            <div key={i} className="stat-card">
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl mb-4"
+                                    style={{background:`${s.color}22`}}>
+                                    {s.icon}
+                                </div>
+                                <div className="text-3xl font-bold text-white mb-1" style={{fontFamily:'Space Grotesk'}}>{s.value}</div>
+                                <div className="text-slate-400 text-sm">{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {user.role === 'student' && attendance.length > 0 && (
+                        <div className="glass p-6">
+                            <h3 className="text-white font-bold mb-4">Attendance Overview</h3>
+                            <div className="flex items-center gap-4 mb-2">
+                                <div style={{flex:1, height:'8px', background:'rgba(255,255,255,0.08)', borderRadius:'10px', overflow:'hidden'}}>
+                                    <div style={{width:`${attendanceRate}%`, height:'100%', borderRadius:'10px', background: attendanceRate >= 75 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)', transition:'width 1s ease'}}></div>
+                                </div>
+                                <span className="text-white font-bold text-lg" style={{fontFamily:'Space Grotesk', minWidth:'50px'}}>{attendanceRate}%</span>
+                            </div>
+                            <p className="text-slate-500 text-xs">{presentCount} present out of {totalClasses} total classes · {attendanceRate >= 75 ? '✅ Good standing' : '⚠️ Below 75% — at risk'}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ─── STUDENT: ATTENDANCE PAGE ─────────────────────────────────────────────────
+
+        function AttendancePage({ attendance }) {
+            if (!attendance || attendance.length === 0) {
+                return (
+                    <div className="glass p-8 text-center">
+                        <div className="text-5xl mb-4">📅</div>
+                        <h2 className="text-white font-bold text-xl mb-2">No Attendance Records</h2>
+                        <p className="text-slate-500">Your attendance records will appear here once your teacher marks attendance.</p>
+                    </div>
+                );
+            }
+
+            const groupedByDate = attendance.reduce((acc, item) => {
+                if (!acc[item.date]) acc[item.date] = [];
+                acc[item.date].push(item);
+                return acc;
+            }, {});
+
+            const sortedDates = Object.keys(groupedByDate).sort((a, b) => new Date(b) - new Date(a));
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass p-5 flex gap-6">
+                        <div><span className="text-slate-400 text-sm">Total</span><div className="text-white font-bold text-2xl" style={{fontFamily:'Space Grotesk'}}>{attendance.length}</div></div>
+                        <div><span className="text-slate-400 text-sm">Present</span><div className="text-green-400 font-bold text-2xl" style={{fontFamily:'Space Grotesk'}}>{attendance.filter(a=>a.status==='present').length}</div></div>
+                        <div><span className="text-slate-400 text-sm">Absent</span><div className="text-red-400 font-bold text-2xl" style={{fontFamily:'Space Grotesk'}}>{attendance.filter(a=>a.status==='absent').length}</div></div>
+                    </div>
+
+                    {sortedDates.map(date => (
+                        <div key={date} className="glass p-5">
+                            <h3 className="text-slate-300 font-semibold text-sm mb-3">
+                                📅 {new Date(date).toLocaleDateString('en-IN', {weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {groupedByDate[date].map(r => (
+                                    <div key={r.id} style={{background: r.status==='present' ? 'rgba(16,185,129,0.08)' : 'rgba(239,68,68,0.08)', border: `1px solid ${r.status==='present' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)'}`, borderRadius:'10px', padding:'12px 14px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                        <span className="text-white font-medium text-sm">{r.subject}</span>
+                                        <span style={{fontSize:'0.75rem', fontWeight:700, padding:'3px 10px', borderRadius:'20px', background: r.status==='present' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', color: r.status==='present' ? '#6ee7b7' : '#fca5a5'}}>
+                                            {r.status === 'present' ? '✓ Present' : '✗ Absent'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // ─── STUDENT: EXAMS PAGE ──────────────────────────────────────────────────────
+
+        function ExamsPage({ exams }) {
+            return (
+                <div className="glass p-6">
+                    <h2 className="text-white font-bold text-xl mb-6">Exam Scores</h2>
+                    {exams.length === 0 ? (
+                        <p className="text-slate-500 text-center py-8">No exam records found yet.</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="data-table">
+                                <thead><tr><th>Exam</th><th>Subject</th><th>Score</th><th>Date</th><th>%</th></tr></thead>
+                                <tbody>
+                                    {exams.map(exam => {
+                                        const pct = ((exam.score / exam.maxScore)*100).toFixed(1);
+                                        const color = pct >= 90 ? '#10b981' : pct >= 75 ? '#6366f1' : pct >= 60 ? '#f59e0b' : '#ef4444';
+                                        return (
+                                            <tr key={exam.id}>
+                                                <td className="font-medium text-white">{exam.name}</td>
+                                                <td>{exam.subject}</td>
+                                                <td><span className="text-white font-semibold">{exam.score}</span><span className="text-slate-600">/{exam.maxScore}</span></td>
+                                                <td>{exam.date}</td>
+                                                <td><span style={{padding:'3px 12px', borderRadius:'20px', fontWeight:700, fontSize:'0.8rem', background:`${color}22`, color, border:`1px solid ${color}44`}}>{pct}%</span></td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ─── STUDENT: NOTES PAGE ──────────────────────────────────────────────────────
+
+        function NotesPage({ notes, userClass, userBranch }) {
+            const filtered = notes.filter(n => n.year === userClass && n.branch === userBranch);
+
+            const handleDownload = (note) => {
+                if (note.fileData) {
+                    const link = document.createElement('a');
+                    link.href = note.fileData;
+                    link.download = note.fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                } else {
+                    alert('File not available.');
+                }
+            };
+
+            return (
+                <div>
+                    <h2 className="text-white font-bold text-xl mb-6">Study Materials — {userClass} · {userBranch}</h2>
+                    {filtered.length === 0 ? (
+                        <div className="glass p-10 text-center">
+                            <div className="text-5xl mb-4">📚</div>
+                            <p className="text-slate-500">No materials uploaded for your class yet.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {filtered.map(note => (
+                                <div key={note.id} className="glass p-5" style={{transition:'all 0.2s'}}>
+                                    <div className="text-4xl mb-3">📄</div>
+                                    <h3 className="text-white font-bold mb-2">{note.title}</h3>
+                                    <p className="text-slate-400 text-sm mb-1">📚 {note.subject}</p>
+                                    {note.description && <p className="text-slate-500 text-xs mb-3 italic">{note.description}</p>}
+                                    <p className="text-slate-600 text-xs mb-4">Uploaded: {note.uploadDate}</p>
+                                    <button onClick={() => handleDownload(note)} className="btn-primary" style={{width:'100%', padding:'10px'}}>
+                                        {note.fileData ? '⬇️ Download' : '📄 View'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ─── STUDENT: PROGRESS PAGE ───────────────────────────────────────────────────
+
+        function ProgressPage({ attendance, exams }) {
+            const total = attendance.length;
+            const present = attendance.filter(a => a.status === 'present').length;
+            const attPct = total > 0 ? ((present / total) * 100).toFixed(1) : 0;
+
+            const examTypes = ['CAE-1', 'CAE-2', 'TAE-1', 'TAE-2'];
+            const examAvgs = examTypes.map(type => {
+                const t = exams.filter(e => e.name === type);
+                if (!t.length) return 0;
+                return (t.reduce((s, e) => s + (e.score/e.maxScore*100), 0) / t.length).toFixed(1);
+            });
+
+            const validAvgs = examAvgs.filter(a => a > 0);
+            const overallAvg = validAvgs.length ? (validAvgs.reduce((a,b) => parseFloat(a)+parseFloat(b), 0) / validAvgs.length).toFixed(1) : 0;
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass p-6">
+                        <h3 className="text-white font-bold text-lg mb-5">Academic Progress</h3>
+                        <div className="space-y-5">
+                            <div>
+                                <div className="flex justify-between mb-2"><span className="text-slate-400 text-sm">Attendance</span><span className="text-white font-bold">{attPct}%</span></div>
+                                <div style={{height:'8px', background:'rgba(255,255,255,0.08)', borderRadius:'10px', overflow:'hidden'}}>
+                                    <div style={{width:`${attPct}%`, height:'100%', background: attPct >= 75 ? 'linear-gradient(90deg,#10b981,#34d399)' : 'linear-gradient(90deg,#ef4444,#f87171)', borderRadius:'10px', transition:'width 1s ease'}} className="progress-bar"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="flex justify-between mb-2"><span className="text-slate-400 text-sm">Overall Academic Score</span><span className="text-white font-bold">{overallAvg}%</span></div>
+                                <div style={{height:'8px', background:'rgba(255,255,255,0.08)', borderRadius:'10px', overflow:'hidden'}}>
+                                    <div style={{width:`${overallAvg}%`, height:'100%', background:'linear-gradient(90deg,#6366f1,#8b5cf6)', borderRadius:'10px', transition:'width 1s ease'}} className="progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        {examTypes.map((type, idx) => (
+                            <div key={type} className="glass p-5 text-center">
+                                <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-2">{type}</div>
+                                <div className="text-white text-2xl font-bold" style={{fontFamily:'Space Grotesk'}}>{examAvgs[idx]}%</div>
+                                <div style={{height:'4px', background:'rgba(255,255,255,0.08)', borderRadius:'10px', marginTop:'10px', overflow:'hidden'}}>
+                                    <div style={{width:`${examAvgs[idx]}%`, height:'100%', background:'linear-gradient(90deg,#6366f1,#a78bfa)', borderRadius:'10px'}}></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="glass p-6 space-y-3">
+                        <h3 className="text-white font-bold mb-4">Performance Insights</h3>
+                        {attPct < 75 && <div style={{background:'rgba(239,68,68,0.08)', borderLeft:'3px solid #ef4444', borderRadius:'8px', padding:'12px 16px'}}><p className="text-red-300 text-sm">⚠️ <strong>Low Attendance:</strong> Below 75%. Please attend classes regularly.</p></div>}
+                        {overallAvg >= 85 && <div style={{background:'rgba(16,185,129,0.08)', borderLeft:'3px solid #10b981', borderRadius:'8px', padding:'12px 16px'}}><p className="text-green-300 text-sm">🎉 <strong>Excellent Performance!</strong> You're doing great. Keep it up.</p></div>}
+                        {overallAvg < 60 && overallAvg > 0 && <div style={{background:'rgba(245,158,11,0.08)', borderLeft:'3px solid #f59e0b', borderRadius:'8px', padding:'12px 16px'}}><p className="text-yellow-300 text-sm">💪 <strong>Room for Improvement:</strong> Consider seeking help from your teachers.</p></div>}
+                        {attPct >= 75 && overallAvg >= 60 && overallAvg < 85 && <div style={{background:'rgba(99,102,241,0.08)', borderLeft:'3px solid #6366f1', borderRadius:'8px', padding:'12px 16px'}}><p className="text-indigo-300 text-sm">📘 <strong>On Track:</strong> You're doing well. A little more effort and you'll excel!</p></div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── TEACHER: MARK ATTENDANCE ─────────────────────────────────────────────────
+
+        function ManageAttendancePage({ onRefresh, allUsers }) {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [year, setYear] = useState('2nd Year');
+            const [branch, setBranch] = useState('Computer Science');
+            const [subject, setSubject] = useState('Data Structures');
+            const [marks, setMarks] = useState({});
+            const [success, setSuccess] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            const students = allUsers.filter(u => u.role === 'student' && u.year === year && u.branch === branch);
+
+            useEffect(() => {
+                const m = {};
+                students.forEach(st => { m[st.userId] = 'present'; });
+                setMarks(m);
+            }, [year, branch, allUsers.length]);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                    await Promise.all(students.map(st =>
+                        api.post('/attendance', {
+                            studentId: st.userId, studentName: st.name,
+                            date, subject, status: marks[st.userId] || 'present',
+                            year, branch
+                        })
+                    ));
+                    setSuccess(`Attendance marked for ${students.length} student(s).`);
+                    onRefresh();
+                    setTimeout(() => setSuccess(''), 3000);
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="glass p-6">
+                    <h2 className="text-white font-bold text-xl mb-6">Mark Attendance</h2>
+                    {success && <div style={{background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:'10px', padding:'12px 16px', marginBottom:'16px', color:'#6ee7b7', fontSize:'0.9rem'}}>✅ {success}</div>}
+                    <form onSubmit={handleSubmit} className="space-y-5">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div><label className="form-label">Date</label><input type="date" className="form-input" value={date} onChange={e=>setDate(e.target.value)} required /></div>
+                            <div><label className="form-label">Year</label>
+                                <select className="form-input" value={year} onChange={e=>setYear(e.target.value)}>
+                                    {['1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Branch</label>
+                                <select className="form-input" value={branch} onChange={e=>setBranch(e.target.value)}>
+                                    {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Subject</label>
+                                <select className="form-input" value={subject} onChange={e=>setSubject(e.target.value)}>
+                                    {['Data Structures','Database Management','Operating Systems','Computer Networks','Software Engineering','Web Technologies','Machine Learning','Cloud Computing'].map(s=><option key={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        {students.length === 0 ? (
+                            <p className="text-slate-500 text-sm py-4">No students found for this year and branch.</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="data-table">
+                                    <thead><tr><th>Roll No</th><th>Name</th><th>User ID</th><th>Status</th></tr></thead>
+                                    <tbody>
+                                        {students.map(st => (
+                                            <tr key={st.id}>
+                                                <td>{st.rollNo || '—'}</td>
+                                                <td className="text-white font-medium">{st.name}</td>
+                                                <td><span className="cred-value" style={{fontSize:'0.78rem'}}>{st.userId}</span></td>
+                                                <td>
+                                                    <div className="flex gap-2">
+                                                        {['present','absent'].map(s => (
+                                                            <button key={s} type="button" onClick={() => setMarks(m => ({...m, [st.userId]: s}))}
+                                                                style={{padding:'5px 14px', borderRadius:'8px', fontSize:'0.8rem', fontWeight:600, cursor:'pointer', border:'none',
+                                                                    background: marks[st.userId] === s ? (s === 'present' ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)') : 'rgba(255,255,255,0.06)',
+                                                                    color: marks[st.userId] === s ? (s === 'present' ? '#6ee7b7' : '#fca5a5') : '#475569'}}>
+                                                                {s === 'present' ? '✓ Present' : '✗ Absent'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                        <button type="submit" className="btn-primary" style={{padding:'12px 32px'}} disabled={loading}>
+                            {loading ? 'Saving...' : 'Save Attendance'}
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        // ─── TEACHER: ATTENDANCE ANALYSIS ────────────────────────────────────────────
+
+        function AttendanceAnalysisPage({ attendance, allUsers }) {
+            const [year, setYear] = useState('All Years');
+            const [branch, setBranch] = useState('All Branches');
+            const [subject, setSubject] = useState('All Subjects');
+
+            const allStudents = allUsers.filter(u => u.role === 'student');
+
+            let filtered = attendance;
+            if (year !== 'All Years') filtered = filtered.filter(a => a.year === year);
+            if (branch !== 'All Branches') filtered = filtered.filter(a => a.branch === branch);
+            if (subject !== 'All Subjects') filtered = filtered.filter(a => a.subject === subject);
+
+            const studentAnalysis = allStudents.map(s => {
+                const sData = filtered.filter(a => a.studentId === s.userId);
+                const total = sData.length;
+                const present = sData.filter(a => a.status === 'present').length;
+                const pct = total > 0 ? Math.round((present/total)*100) : 0;
+                return { ...s, total, present, absent: total - present, pct, status: pct >= 75 ? 'Good' : pct >= 60 ? 'Warning' : 'At Risk' };
+            }).filter(s => s.total > 0).sort((a,b) => b.pct - a.pct);
+
+            const avgAtt = studentAnalysis.length ? Math.round(studentAnalysis.reduce((s,x)=>s+x.pct,0)/studentAnalysis.length) : 0;
+            const below75 = studentAnalysis.filter(s=>s.pct<75).length;
+
+            return (
+                <div className="space-y-6">
+                    <div className="glass p-5">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div><label className="form-label">Year</label>
+                                <select className="form-input" value={year} onChange={e=>setYear(e.target.value)}>
+                                    {['All Years','1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Branch</label>
+                                <select className="form-input" value={branch} onChange={e=>setBranch(e.target.value)}>
+                                    {['All Branches','Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Subject</label>
+                                <select className="form-input" value={subject} onChange={e=>setSubject(e.target.value)}>
+                                    {['All Subjects','Data Structures','Database Management','Operating Systems','Computer Networks','Software Engineering','Web Technologies','Machine Learning','Cloud Computing'].map(s=><option key={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            {label:'Students Tracked', value: studentAnalysis.length, color:'#6366f1'},
+                            {label:'Average Attendance', value: `${avgAtt}%`, color:'#10b981'},
+                            {label:'Below 75%', value: below75, color:'#ef4444'},
+                        ].map((s,i) => (
+                            <div key={i} className="glass p-5 text-center">
+                                <div className="text-2xl font-bold text-white" style={{fontFamily:'Space Grotesk', color:s.color}}>{s.value}</div>
+                                <div className="text-slate-500 text-sm mt-1">{s.label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="glass p-6">
+                        <h3 className="text-white font-bold mb-4">Student-wise Attendance</h3>
+                        {studentAnalysis.length === 0 ? (
+                            <p className="text-slate-500 text-center py-8">No data available for selected filters.</p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="data-table">
+                                    <thead><tr><th>Rank</th><th>Name</th><th>Roll No</th><th>Present</th><th>Absent</th><th>%</th><th>Status</th></tr></thead>
+                                    <tbody>
+                                        {studentAnalysis.map((s, i) => (
+                                            <tr key={s.id}>
+                                                <td className="text-center">{i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</td>
+                                                <td className="text-white font-medium">{s.name}</td>
+                                                <td>{s.rollNo || '—'}</td>
+                                                <td className="text-green-400 font-semibold">{s.present}</td>
+                                                <td className="text-red-400 font-semibold">{s.absent}</td>
+                                                <td>
+                                                    <span style={{padding:'3px 10px', borderRadius:'20px', fontWeight:700, fontSize:'0.8rem',
+                                                        background: s.pct>=75?'rgba(16,185,129,0.15)':s.pct>=60?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',
+                                                        color: s.pct>=75?'#6ee7b7':s.pct>=60?'#fcd34d':'#fca5a5'}}>
+                                                        {s.pct}%
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span style={{padding:'3px 10px', borderRadius:'20px', fontWeight:600, fontSize:'0.75rem',
+                                                        background: s.status==='Good'?'rgba(16,185,129,0.1)':s.status==='Warning'?'rgba(245,158,11,0.1)':'rgba(239,68,68,0.1)',
+                                                        color: s.status==='Good'?'#6ee7b7':s.status==='Warning'?'#fcd34d':'#fca5a5'}}>
+                                                        {s.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // ─── TEACHER: ADD MARKS ───────────────────────────────────────────────────────
+
+        function ManageMarksPage({ onRefresh, allUsers }) {
+            const [form, setForm] = useState({ studentId: '', examName: 'CAE-1', subject: 'Data Structures', score: '', maxScore: 100, date: new Date().toISOString().split('T')[0], year: '2nd Year', branch: 'Computer Science' });
+            const [success, setSuccess] = useState('');
+            const [loading, setLoading] = useState(false);
+            const f = (k,v) => setForm(p=>({...p,[k]:v}));
+
+            const students = allUsers.filter(u => u.role === 'student' && u.year === form.year && u.branch === form.branch);
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                const student = allUsers.find(u => u.userId === form.studentId);
+                if (!student) return;
+                setLoading(true);
+                try {
+                    await api.post('/exams', {
+                        studentId: form.studentId,
+                        studentName: student.name,
+                        name: form.examName,
+                        subject: form.subject,
+                        score: parseInt(form.score),
+                        maxScore: parseInt(form.maxScore),
+                        date: form.date,
+                        year: form.year,
+                        branch: form.branch
+                    });
+                    setSuccess(`Marks added for ${student.name}`);
+                    onRefresh();
+                    setTimeout(() => setSuccess(''), 3000);
+                    setForm(p => ({...p, score: '', studentId: ''}));
+                } catch (err) {
+                    console.error(err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="glass p-6">
+                    <h2 className="text-white font-bold text-xl mb-6">Add Exam Marks</h2>
+                    {success && <div style={{background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:'10px', padding:'12px 16px', marginBottom:'16px', color:'#6ee7b7', fontSize:'0.9rem'}}>✅ {success}</div>}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="form-label">Year</label>
+                                <select className="form-input" value={form.year} onChange={e=>f('year',e.target.value)}>
+                                    {['1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Branch</label>
+                                <select className="form-input" value={form.branch} onChange={e=>f('branch',e.target.value)}>
+                                    {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div><label className="form-label">Student</label>
+                            <select className="form-input" value={form.studentId} onChange={e=>f('studentId',e.target.value)} required>
+                                <option value="">— Select Student —</option>
+                                {students.map(s=><option key={s.id} value={s.userId}>{s.name} ({s.rollNo || s.userId})</option>)}
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><label className="form-label">Exam Name</label>
+                                <select className="form-input" value={form.examName} onChange={e=>f('examName',e.target.value)}>
+                                    {['CAE-1','CAE-2','TAE-1','TAE-2','Semester Exam'].map(n=><option key={n}>{n}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Subject</label>
+                                <select className="form-input" value={form.subject} onChange={e=>f('subject',e.target.value)}>
+                                    {['Data Structures','Database Management','Operating Systems','Computer Networks','Software Engineering','Web Technologies','Machine Learning','Cloud Computing'].map(s=><option key={s}>{s}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div><label className="form-label">Score</label><input className="form-input" type="number" value={form.score} onChange={e=>f('score',e.target.value)} min="0" required /></div>
+                            <div><label className="form-label">Max Marks</label><input className="form-input" type="number" value={form.maxScore} onChange={e=>f('maxScore',e.target.value)} min="1" required /></div>
+                            <div><label className="form-label">Date</label><input className="form-input" type="date" value={form.date} onChange={e=>f('date',e.target.value)} required /></div>
+                        </div>
+                        <button type="submit" className="btn-primary" style={{padding:'12px 32px'}} disabled={loading}>
+                            {loading ? 'Saving...' : 'Add Marks'}
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        // ─── TEACHER: UPLOAD NOTES ────────────────────────────────────────────────────
+
+        function UploadNotesPage({ onRefresh, user }) {
+            const [form, setForm] = useState({ title: '', subject: 'Data Structures', year: '2nd Year', branch: 'Computer Science', description: '' });
+            const [file, setFile] = useState(null);
+            const [success, setSuccess] = useState('');
+            const [error, setError] = useState('');
+            const [loading, setLoading] = useState(false);
+            const f = (k,v) => setForm(p=>({...p,[k]:v}));
+
+            const handleFile = (e) => {
+                const fl = e.target.files[0];
+                if (!fl) return;
+                if (fl.size > 10*1024*1024) { setError('File must be under 10MB.'); return; }
+                setError(''); setFile(fl);
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!file) { setError('Please select a file.'); return; }
+                const reader = new FileReader();
+                reader.onload = async (ev) => {
+                    setLoading(true);
+                    try {
+                        await api.post('/notes', {
+                            ...form,
+                            uploadDate: new Date().toISOString().split('T')[0],
+                            uploadedBy: user.name || 'Teacher',
+                            fileName: file.name,
+                            fileSize: (file.size/1024).toFixed(1)+'KB',
+                            fileData: ev.target.result
+                        });
+                        setSuccess(`"${file.name}" uploaded successfully!`);
+                        setForm({ title:'', subject:'Data Structures', year:'2nd Year', branch:'Computer Science', description:'' });
+                        setFile(null);
+                        document.getElementById('fileInput').value = '';
+                        onRefresh();
+                        setTimeout(() => setSuccess(''), 3000);
+                    } catch (err) {
+                        setError('Upload failed. Please try again.');
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                reader.readAsDataURL(file);
+            };
+
+            return (
+                <div className="glass p-6">
+                    <h2 className="text-white font-bold text-xl mb-6">Upload Study Material</h2>
+                    {success && <div style={{background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', borderRadius:'10px', padding:'12px 16px', marginBottom:'16px', color:'#6ee7b7', fontSize:'0.9rem'}}>✅ {success}</div>}
+                    {error && <div className="error-box mb-4">⚠️ {error}</div>}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div><label className="form-label">Title *</label><input className="form-input" value={form.title} onChange={e=>f('title',e.target.value)} placeholder="e.g. Arrays and Linked Lists" required /></div>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div><label className="form-label">Subject</label>
+                                <select className="form-input" value={form.subject} onChange={e=>f('subject',e.target.value)}>
+                                    {['Data Structures','Database Management','Operating Systems','Computer Networks','Software Engineering','Web Technologies','Machine Learning','Cloud Computing'].map(s=><option key={s}>{s}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Year</label>
+                                <select className="form-input" value={form.year} onChange={e=>f('year',e.target.value)}>
+                                    {['1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                                </select>
+                            </div>
+                            <div><label className="form-label">Branch</label>
+                                <select className="form-input" value={form.branch} onChange={e=>f('branch',e.target.value)}>
+                                    {['Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div><label className="form-label">Description</label><textarea className="form-input" value={form.description} onChange={e=>f('description',e.target.value)} rows="3" placeholder="Brief description..."></textarea></div>
+                        <div>
+                            <label className="form-label">File *</label>
+                            <input type="file" id="fileInput" className="hidden" onChange={handleFile} accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.zip" />
+                            <label htmlFor="fileInput" style={{display:'block', border:'2px dashed rgba(99,102,241,0.3)', borderRadius:'12px', padding:'32px', textAlign:'center', cursor:'pointer', transition:'all 0.2s', background:'rgba(99,102,241,0.04)'}}>
+                                <div style={{fontSize:'2.5rem', marginBottom:'8px'}}>{file ? '📎' : '📁'}</div>
+                                <p className="text-slate-400 text-sm">{file ? file.name : 'Click to upload PDF, DOC, PPT, TXT, ZIP (max 10MB)'}</p>
+                            </label>
+                        </div>
+                        <button type="submit" className="btn-primary" style={{padding:'12px 32px'}} disabled={loading}>
+                            {loading ? 'Uploading...' : 'Upload Material'}
+                        </button>
+                    </form>
+                </div>
+            );
+        }
+
+        // ─── TEACHER: VIEW STUDENTS ───────────────────────────────────────────────────
+
+        function ViewStudentsPage({ allUsers }) {
+            const [year, setYear] = useState('All');
+            const [branch, setBranch] = useState('All');
+            const allStudents = allUsers.filter(u => u.role === 'student');
+            const filtered = allStudents.filter(s => (year === 'All' || s.year === year) && (branch === 'All' || s.branch === branch));
+
+            return (
+                <div className="glass p-6">
+                    <h2 className="text-white font-bold text-xl mb-5">All Students</h2>
+                    <div className="grid grid-cols-2 gap-4 mb-5">
+                        <div><label className="form-label">Year</label>
+                            <select className="form-input" value={year} onChange={e=>setYear(e.target.value)}>
+                                {['All','1st Year','2nd Year','3rd Year','4th Year'].map(y=><option key={y}>{y}</option>)}
+                            </select>
+                        </div>
+                        <div><label className="form-label">Branch</label>
+                            <select className="form-input" value={branch} onChange={e=>setBranch(e.target.value)}>
+                                {['All','Computer Science','Information Technology','Electronics & Communication','Electrical Engineering','Mechanical Engineering','Civil Engineering'].map(b=><option key={b}>{b}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    {filtered.length === 0 ? (
+                        <p className="text-slate-500 text-center py-8">No students found.</p>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="data-table">
+                                <thead><tr><th>User ID</th><th>Name</th><th>Roll No</th><th>Year</th><th>Branch</th></tr></thead>
+                                <tbody>
+                                    {filtered.map(s => (
+                                        <tr key={s.id}>
+                                            <td><span className="cred-value" style={{fontSize:'0.8rem'}}>{s.userId}</span></td>
+                                            <td className="text-white font-medium">{s.name}</td>
+                                            <td>{s.rollNo || '—'}</td>
+                                            <td>{s.year}</td>
+                                            <td>{s.branch}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // ─── RENDER ───────────────────────────────────────────────────────────────────
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
