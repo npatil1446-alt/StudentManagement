@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/smartedu-frontend-java.html" },
+    { "source": "/(.*)", "destination": "/smartedu-frontend-java.html" }
+  ]
+}
