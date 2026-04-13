@@ -17,9 +17,12 @@ public class Database {
 
     /** Call once at startup to configure the driver and seed demo data. */
     public static void init() throws SQLException {
-        url      = System.getenv("DB_URL");
-        user     = System.getenv("DB_USER");
-        password = System.getenv("DB_PASSWORD");
+        url      = System.getenv("DB_URL") != null ? System.getenv("DB_URL").trim() : null;
+        user     = System.getenv("DB_USER") != null ? System.getenv("DB_USER").trim() : null;
+        password = System.getenv("DB_PASSWORD") != null ? System.getenv("DB_PASSWORD").trim() : null;
+
+        // Force register driver directly
+        DriverManager.registerDriver(new com.mysql.cj.jdbc.Driver());
 
         if (url == null || url.isBlank()) {
             throw new IllegalStateException(
@@ -37,12 +40,6 @@ public class Database {
 
     /** Returns a fresh connection from DriverManager each time. */
     public static Connection getConnection() throws SQLException {
-        try {
-            // Explicitly load driver — required in fat JARs where SPI files may be overwritten
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("MySQL JDBC Driver not found on classpath", e);
-        }
         return DriverManager.getConnection(url, user, password);
     }
 
