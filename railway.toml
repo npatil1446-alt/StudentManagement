@@ -1,0 +1,7 @@
+[build]
+buildCommand = "mvn -B -DskipTests clean package"
+
+[deploy]
+startCommand = "java -jar target/smartedu-backend-1.0.0.jar"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
