@@ -3,4 +3,6 @@ out/
 .mvn-local/
 target/
 lib/
+run.bat
+
 
