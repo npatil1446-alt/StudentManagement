@@ -37,6 +37,12 @@ public class Database {
 
     /** Returns a fresh connection from DriverManager each time. */
     public static Connection getConnection() throws SQLException {
+        try {
+            // Explicitly load driver — required in fat JARs where SPI files may be overwritten
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("MySQL JDBC Driver not found on classpath", e);
+        }
         return DriverManager.getConnection(url, user, password);
     }
 
