@@ -2,9 +2,9 @@ package com.smartedu.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.smartedu.db.Database;
-import com.smartedu.model.User;
 import com.smartedu.util.Json;
 import java.io.IOException;
+import java.sql.*;
 import java.util.Map;
 
 public class AuthHandler extends BaseHandler {
@@ -20,38 +20,47 @@ public class AuthHandler extends BaseHandler {
         String password = Json.get(body, "password");
         String role     = Json.get(body, "role");
 
-        User found = Database.users.stream()
-                .filter(u -> u.userId.trim().toLowerCase().equals(userId) && u.password.equals(password))
-                .findFirst().orElse(null);
-
-        if (found == null) {
-            sendJson(ex, 200, Json.obj("success", Json.bool(false),
-                "message", Json.str("Invalid User ID or Password. Contact the Admin if you need access.")));
-            return;
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement(
+                 "SELECT * FROM users WHERE LOWER(user_id)=? AND password=? LIMIT 1")) {
+            ps.setString(1, userId);
+            ps.setString(2, password);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    sendJson(ex, 200, Json.obj("success", Json.bool(false),
+                        "message", Json.str("Invalid User ID or Password. Contact the Admin if you need access.")));
+                    return;
+                }
+                String foundRole = rs.getString("role");
+                if (!foundRole.equals(role)) {
+                    sendJson(ex, 200, Json.obj("success", Json.bool(false),
+                        "message", Json.str("This User ID belongs to a " + foundRole + " account. Please select the correct role.")));
+                    return;
+                }
+                sendJson(ex, 200, Json.obj("success", Json.bool(true),
+                    "message", Json.str("Login successful"),
+                    "user", userJson(rs)));
+            }
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
         }
-        if (!found.role.equals(role)) {
-            sendJson(ex, 200, Json.obj("success", Json.bool(false),
-                "message", Json.str("This User ID belongs to a " + found.role + " account. Please select the correct role.")));
-            return;
-        }
-        sendJson(ex, 200, Json.obj("success", Json.bool(true), "message", Json.str("Login successful"), "user", userJson(found)));
     }
 
-    public static String userJson(User u) {
+    public static String userJson(ResultSet rs) throws SQLException {
         return Json.obj(
-            "id",          Json.num(u.id),
-            "userId",      Json.str(u.userId),
-            "role",        Json.str(u.role),
-            "name",        Json.str(u.name),
-            "email",       Json.str(u.email),
-            "department",  Json.str(u.department),
-            "subjects",    Json.str(u.subjects),
-            "rollNo",      Json.str(u.rollNo),
-            "year",        Json.str(u.year),
-            "branch",      Json.str(u.branch),
-            "parentEmail", Json.str(u.parentEmail),
-            "parentPhone", Json.str(u.parentPhone),
-            "createdAt",   Json.str(u.createdAt)
+            "id",          Json.num(rs.getLong("id")),
+            "userId",      Json.str(rs.getString("user_id")),
+            "role",        Json.str(rs.getString("role")),
+            "name",        Json.str(rs.getString("name")),
+            "email",       Json.str(rs.getString("email")),
+            "department",  Json.str(rs.getString("department")),
+            "subjects",    Json.str(rs.getString("subjects")),
+            "rollNo",      Json.str(rs.getString("roll_no")),
+            "year",        Json.str(rs.getString("year")),
+            "branch",      Json.str(rs.getString("branch")),
+            "parentEmail", Json.str(rs.getString("parent_email")),
+            "parentPhone", Json.str(rs.getString("parent_phone")),
+            "createdAt",   Json.str(rs.getString("created_at"))
         );
     }
 }

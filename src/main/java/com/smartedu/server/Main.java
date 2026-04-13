@@ -9,8 +9,16 @@ import java.util.concurrent.Executors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        // Railway injects PORT; fall back to 8080 for local dev
+        int port = 8080;
+        String envPort = System.getenv("PORT");
+        if (envPort != null && !envPort.isBlank()) {
+            port = Integer.parseInt(envPort.trim());
+        }
+
         Database.init();
-        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/api/auth/login",  new AuthHandler());
         server.createContext("/api/users",       new UserHandler());
         server.createContext("/api/attendance",  new AttendanceHandler());
@@ -19,8 +27,7 @@ public class Main {
         server.setExecutor(Executors.newFixedThreadPool(10));
         server.start();
         System.out.println("=========================================");
-        System.out.println("  SmartEdu Backend running on port 8080 ");
-        System.out.println("  Open smartedu-frontend-java.html       ");
+        System.out.println("  SmartEdu Backend running on port " + port);
         System.out.println("=========================================");
         System.out.println("  Admin:   ADMIN001   / admin@123");
         System.out.println("  Teacher: TCH2026001 / teach@123");

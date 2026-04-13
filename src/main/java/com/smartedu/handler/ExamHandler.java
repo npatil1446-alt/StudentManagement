@@ -2,11 +2,10 @@ package com.smartedu.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.smartedu.db.Database;
-import com.smartedu.model.Exam;
 import com.smartedu.util.Json;
 import java.io.IOException;
+import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ExamHandler extends BaseHandler {
 
@@ -24,43 +23,78 @@ public class ExamHandler extends BaseHandler {
         String studentId = queryParam(ex, "studentId");
         String year      = queryParam(ex, "year");
         String branch    = queryParam(ex, "branch");
-        List<Exam> result = new ArrayList<>(Database.exams);
-        if (studentId != null) result = result.stream().filter(e -> e.studentId.equals(studentId)).collect(Collectors.toList());
-        if (year      != null) result = result.stream().filter(e -> e.year.equals(year)).collect(Collectors.toList());
-        if (branch    != null) result = result.stream().filter(e -> e.branch.equals(branch)).collect(Collectors.toList());
-        sendJson(ex, 200, Json.arr(result.stream().map(ExamHandler::toJson).collect(Collectors.toList())));
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM exams WHERE 1=1");
+        List<String> params = new ArrayList<>();
+        if (studentId != null) { sql.append(" AND student_id=?"); params.add(studentId); }
+        if (year      != null) { sql.append(" AND year=?");       params.add(year); }
+        if (branch    != null) { sql.append(" AND branch=?");     params.add(branch); }
+
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) ps.setString(i + 1, params.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                List<String> rows = new ArrayList<>();
+                while (rs.next()) rows.add(toJson(rs));
+                sendJson(ex, 200, Json.arr(rows));
+            }
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
     private void handleCreate(HttpExchange ex) throws IOException {
         Map<String, String> body = Json.parse(readBody(ex));
-        Exam e = new Exam();
-        e.id = Database.examIdSeq.getAndIncrement();
-        e.studentId = Json.get(body,"studentId"); e.studentName = Json.get(body,"studentName");
-        e.name = Json.get(body,"name"); e.subject = Json.get(body,"subject");
-        e.score = Json.getInt(body,"score"); e.maxScore = Json.getInt(body,"maxScore");
-        e.date = Json.get(body,"date"); e.year = Json.get(body,"year"); e.branch = Json.get(body,"branch");
-        Database.exams.add(e);
-        sendJson(ex, 200, toJson(e));
+        String sql = "INSERT INTO exams (student_id,student_name,name,subject,score,max_score,date,year,branch) VALUES (?,?,?,?,?,?,?,?,?)";
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, Json.get(body,"studentId"));
+            ps.setString(2, Json.get(body,"studentName"));
+            ps.setString(3, Json.get(body,"name"));
+            ps.setString(4, Json.get(body,"subject"));
+            ps.setInt(5,    Json.getInt(body,"score"));
+            ps.setInt(6,    Json.getInt(body,"maxScore"));
+            ps.setString(7, Json.get(body,"date"));
+            ps.setString(8, Json.get(body,"year"));
+            ps.setString(9, Json.get(body,"branch"));
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                keys.next();
+                long newId = keys.getLong(1);
+                try (PreparedStatement sel = c.prepareStatement("SELECT * FROM exams WHERE id=?")) {
+                    sel.setLong(1, newId);
+                    try (ResultSet rs = sel.executeQuery()) { rs.next(); sendJson(ex, 200, toJson(rs)); }
+                }
+            }
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
     private void handleDelete(HttpExchange ex) throws IOException {
         long id = pathId(ex);
-        boolean removed = Database.exams.removeIf(e -> e.id == id);
-        sendJson(ex, 200, Json.obj("success", Json.bool(removed), "message", Json.str(removed ? "Deleted" : "Not found")));
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement("DELETE FROM exams WHERE id=?")) {
+            ps.setLong(1, id);
+            boolean removed = ps.executeUpdate() > 0;
+            sendJson(ex, 200, Json.obj("success", Json.bool(removed), "message", Json.str(removed ? "Deleted" : "Not found")));
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
-    public static String toJson(Exam e) {
+    public static String toJson(ResultSet rs) throws SQLException {
         return Json.obj(
-            "id",          Json.num(e.id),
-            "studentId",   Json.str(e.studentId),
-            "studentName", Json.str(e.studentName),
-            "name",        Json.str(e.name),
-            "subject",     Json.str(e.subject),
-            "score",       Json.num(e.score),
-            "maxScore",    Json.num(e.maxScore),
-            "date",        Json.str(e.date),
-            "year",        Json.str(e.year),
-            "branch",      Json.str(e.branch)
+            "id",          Json.num(rs.getLong("id")),
+            "studentId",   Json.str(rs.getString("student_id")),
+            "studentName", Json.str(rs.getString("student_name")),
+            "name",        Json.str(rs.getString("name")),
+            "subject",     Json.str(rs.getString("subject")),
+            "score",       Json.num(rs.getInt("score")),
+            "maxScore",    Json.num(rs.getInt("max_score")),
+            "date",        Json.str(rs.getString("date")),
+            "year",        Json.str(rs.getString("year")),
+            "branch",      Json.str(rs.getString("branch"))
         );
     }
 }

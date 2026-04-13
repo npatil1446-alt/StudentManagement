@@ -1,101 +1,165 @@
 package com.smartedu.db;
 
-import com.smartedu.model.*;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.List;
+import java.sql.*;
 
+/**
+ * Central place for obtaining JDBC connections.
+ * Reads credentials from environment variables:
+ *   DB_URL      e.g. jdbc:mysql://host:3306/smartedu
+ *   DB_USER     e.g. root
+ *   DB_PASSWORD e.g. secret
+ */
 public class Database {
 
-    public static final List<User>       users      = new CopyOnWriteArrayList<>();
-    public static final List<Attendance> attendance = new CopyOnWriteArrayList<>();
-    public static final List<Exam>       exams      = new CopyOnWriteArrayList<>();
-    public static final List<Note>       notes      = new CopyOnWriteArrayList<>();
+    private static String url;
+    private static String user;
+    private static String password;
 
-    public static final AtomicLong userIdSeq       = new AtomicLong(1);
-    public static final AtomicLong attendanceIdSeq = new AtomicLong(1);
-    public static final AtomicLong examIdSeq       = new AtomicLong(1);
-    public static final AtomicLong noteIdSeq       = new AtomicLong(1);
+    /** Call once at startup to configure the driver and seed demo data. */
+    public static void init() throws SQLException {
+        url      = System.getenv("DB_URL");
+        user     = System.getenv("DB_USER");
+        password = System.getenv("DB_PASSWORD");
 
-    public static void init() {
-        final String demoStudentId = "STU2026001";
-        final String demoTeacherId = "TCH2026001";
+        if (url == null || url.isBlank()) {
+            throw new IllegalStateException(
+                "DB_URL environment variable is not set! " +
+                "Set DB_URL, DB_USER and DB_PASSWORD before starting the server.");
+        }
 
-        User admin = new User();
-        admin.id        = userIdSeq.getAndIncrement();
-        admin.userId    = "ADMIN001";
-        admin.password  = "admin@123";
-        admin.role      = "admin";
-        admin.name      = "System Administrator";
-        admin.email     = "admin@smartedu.edu";
-        admin.createdAt = "2026-01-01T00:00:00";
-        users.add(admin);
+        // Verify we can actually connect
+        try (Connection c = getConnection()) {
+            System.out.println("✅  Database connected: " + url);
+        }
 
-        User teacher = new User();
-        teacher.id         = userIdSeq.getAndIncrement();
-        teacher.userId     = demoTeacherId;
-        teacher.password   = "teach@123";
-        teacher.role       = "teacher";
-        teacher.name       = "Dr. Rajesh Kumar";
-        teacher.email      = "rajesh@smartedu.edu";
-        teacher.department = "Computer Science";
-        teacher.subjects   = "Data Structures, Database Management";
-        teacher.createdAt  = "2026-01-01T00:00:00";
-        users.add(teacher);
-
-        User student = new User();
-        student.id          = userIdSeq.getAndIncrement();
-        student.userId      = demoStudentId;
-        student.password    = "stud@123";
-        student.role        = "student";
-        student.name        = "Priya Sharma";
-        student.email       = "priya@smartedu.edu";
-        student.rollNo      = "CS2024001";
-        student.year        = "2nd Year";
-        student.branch      = "Computer Science";
-        student.parentEmail = "parent@gmail.com";
-        student.parentPhone = "+91 9876543210";
-        student.createdAt   = "2026-01-01T00:00:00";
-        users.add(student);
-
-        attendance.add(makeAtt(demoStudentId,"Priya Sharma","2026-03-10","Data Structures","present","2nd Year","Computer Science"));
-        attendance.add(makeAtt(demoStudentId,"Priya Sharma","2026-03-10","Database Management","absent","2nd Year","Computer Science"));
-        attendance.add(makeAtt(demoStudentId,"Priya Sharma","2026-03-11","Data Structures","present","2nd Year","Computer Science"));
-        attendance.add(makeAtt(demoStudentId,"Priya Sharma","2026-03-12","Operating Systems","present","2nd Year","Computer Science"));
-
-        exams.add(makeExam(demoStudentId,"Priya Sharma","CAE-1","Data Structures",85,100,"2026-02-15","2nd Year","Computer Science"));
-        exams.add(makeExam(demoStudentId,"Priya Sharma","CAE-1","Database Management",78,100,"2026-02-16","2nd Year","Computer Science"));
-        exams.add(makeExam(demoStudentId,"Priya Sharma","TAE-1","Data Structures",42,50,"2026-03-01","2nd Year","Computer Science"));
-
-        notes.add(makeNote("Data Structures","Arrays and Linked Lists","2nd Year","Computer Science","Fundamental data structures with examples","2026-02-20","Teacher"));
-        notes.add(makeNote("Database Management","SQL Joins & Queries","2nd Year","Computer Science","Complete guide to SQL joins","2026-03-01","Teacher"));
-
-        System.out.println("Database initialized with demo data.");
+        seedDemoData();
     }
 
-    private static Attendance makeAtt(String sid, String sname, String date, String subject, String status, String year, String branch) {
-        Attendance a = new Attendance();
-        a.id = attendanceIdSeq.getAndIncrement();
-        a.studentId = sid; a.studentName = sname; a.date = date;
-        a.subject = subject; a.status = status; a.year = year; a.branch = branch;
-        return a;
+    /** Returns a fresh connection from DriverManager each time. */
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, user, password);
     }
 
-    private static Exam makeExam(String sid, String sname, String name, String subject, int score, int maxScore, String date, String year, String branch) {
-        Exam e = new Exam();
-        e.id = examIdSeq.getAndIncrement();
-        e.studentId = sid; e.studentName = sname; e.name = name;
-        e.subject = subject; e.score = score; e.maxScore = maxScore;
-        e.date = date; e.year = year; e.branch = branch;
-        return e;
+    // ----------------------------------------------------------------
+    // Demo-data seeding (runs only when the tables are completely empty)
+    // ----------------------------------------------------------------
+    private static void seedDemoData() throws SQLException {
+        try (Connection c = getConnection()) {
+            // Only seed if there are no users yet
+            try (Statement st = c.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT COUNT(*) FROM users")) {
+                rs.next();
+                if (rs.getInt(1) > 0) {
+                    System.out.println("ℹ️  Database already has data – skipping seed.");
+                    return;
+                }
+            }
+
+            // Seed users
+            String ins = "INSERT INTO users " +
+                "(user_id,password,role,name,email,department,subjects," +
+                " roll_no,year,branch,parent_email,parent_phone,created_at) " +
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+
+            try (PreparedStatement ps = c.prepareStatement(ins)) {
+                // Admin
+                setUser(ps, "ADMIN001","admin@123","admin","System Administrator",
+                        "admin@smartedu.edu",null,null,null,null,null,null,null,"2026-01-01 00:00:00");
+                ps.addBatch();
+
+                // Teacher
+                setUser(ps, "TCH2026001","teach@123","teacher","Dr. Rajesh Kumar",
+                        "rajesh@smartedu.edu","Computer Science",
+                        "Data Structures, Database Management",
+                        null,null,null,null,null,"2026-01-01 00:00:00");
+                ps.addBatch();
+
+                // Student
+                setUser(ps, "STU2026001","stud@123","student","Priya Sharma",
+                        "priya@smartedu.edu",null,null,
+                        "CS2024001","2nd Year","Computer Science",
+                        "parent@gmail.com","+91 9876543210","2026-01-01 00:00:00");
+                ps.addBatch();
+
+                ps.executeBatch();
+            }
+
+            // Seed attendance
+            String attSql = "INSERT INTO attendance (student_id,student_name,date,subject,status,year,branch) VALUES (?,?,?,?,?,?,?)";
+            try (PreparedStatement ps = c.prepareStatement(attSql)) {
+                addAtt(ps,"STU2026001","Priya Sharma","2026-03-10","Data Structures","present","2nd Year","Computer Science");
+                addAtt(ps,"STU2026001","Priya Sharma","2026-03-10","Database Management","absent","2nd Year","Computer Science");
+                addAtt(ps,"STU2026001","Priya Sharma","2026-03-11","Data Structures","present","2nd Year","Computer Science");
+                addAtt(ps,"STU2026001","Priya Sharma","2026-03-12","Operating Systems","present","2nd Year","Computer Science");
+                ps.executeBatch();
+            }
+
+            // Seed exams
+            String examSql = "INSERT INTO exams (student_id,student_name,name,subject,score,max_score,date,year,branch) VALUES (?,?,?,?,?,?,?,?,?)";
+            try (PreparedStatement ps = c.prepareStatement(examSql)) {
+                addExam(ps,"STU2026001","Priya Sharma","CAE-1","Data Structures",85,100,"2026-02-15","2nd Year","Computer Science");
+                addExam(ps,"STU2026001","Priya Sharma","CAE-1","Database Management",78,100,"2026-02-16","2nd Year","Computer Science");
+                addExam(ps,"STU2026001","Priya Sharma","TAE-1","Data Structures",42,50,"2026-03-01","2nd Year","Computer Science");
+                ps.executeBatch();
+            }
+
+            // Seed notes
+            String noteSql = "INSERT INTO notes (title,subject,year,branch,description,upload_date,uploaded_by) VALUES (?,?,?,?,?,?,?)";
+            try (PreparedStatement ps = c.prepareStatement(noteSql)) {
+                addNote(ps,"Arrays and Linked Lists","Data Structures","2nd Year","Computer Science","Fundamental data structures with examples","2026-02-20","Teacher");
+                addNote(ps,"SQL Joins & Queries","Database Management","2nd Year","Computer Science","Complete guide to SQL joins","2026-03-01","Teacher");
+                ps.executeBatch();
+            }
+
+            System.out.println("✅  Demo data seeded successfully.");
+        }
     }
 
-    private static Note makeNote(String subject, String title, String year, String branch, String desc, String uploadDate, String uploadedBy) {
-        Note n = new Note();
-        n.id = noteIdSeq.getAndIncrement();
-        n.subject = subject; n.title = title; n.year = year;
-        n.branch = branch; n.description = desc;
-        n.uploadDate = uploadDate; n.uploadedBy = uploadedBy;
-        return n;
+    // ---------- helpers ----------
+
+    private static void setUser(PreparedStatement ps,
+            String userId, String pwd, String role, String name, String email,
+            String dept, String subjects, String rollNo, String year, String branch,
+            String parentEmail, String parentPhone, String createdAt) throws SQLException {
+        ps.setString(1,  userId);
+        ps.setString(2,  pwd);
+        ps.setString(3,  role);
+        ps.setString(4,  name);
+        ps.setString(5,  email);
+        ps.setString(6,  dept);
+        ps.setString(7,  subjects);
+        ps.setString(8,  rollNo);
+        ps.setString(9,  year);
+        ps.setString(10, branch);
+        ps.setString(11, parentEmail);
+        ps.setString(12, parentPhone);
+        ps.setString(13, createdAt);
+    }
+
+    private static void addAtt(PreparedStatement ps,
+            String sid, String sname, String date, String subject, String status,
+            String year, String branch) throws SQLException {
+        ps.setString(1, sid); ps.setString(2, sname); ps.setString(3, date);
+        ps.setString(4, subject); ps.setString(5, status);
+        ps.setString(6, year); ps.setString(7, branch);
+        ps.addBatch();
+    }
+
+    private static void addExam(PreparedStatement ps,
+            String sid, String sname, String name, String subject,
+            int score, int maxScore, String date, String year, String branch) throws SQLException {
+        ps.setString(1, sid); ps.setString(2, sname); ps.setString(3, name);
+        ps.setString(4, subject); ps.setInt(5, score); ps.setInt(6, maxScore);
+        ps.setString(7, date); ps.setString(8, year); ps.setString(9, branch);
+        ps.addBatch();
+    }
+
+    private static void addNote(PreparedStatement ps,
+            String title, String subject, String year, String branch,
+            String desc, String date, String by) throws SQLException {
+        ps.setString(1, title); ps.setString(2, subject);
+        ps.setString(3, year); ps.setString(4, branch);
+        ps.setString(5, desc); ps.setString(6, date); ps.setString(7, by);
+        ps.addBatch();
     }
 }

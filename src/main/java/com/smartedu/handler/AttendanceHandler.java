@@ -2,11 +2,10 @@ package com.smartedu.handler;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.smartedu.db.Database;
-import com.smartedu.model.Attendance;
 import com.smartedu.util.Json;
 import java.io.IOException;
+import java.sql.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class AttendanceHandler extends BaseHandler {
 
@@ -24,40 +23,74 @@ public class AttendanceHandler extends BaseHandler {
         String studentId = queryParam(ex, "studentId");
         String year      = queryParam(ex, "year");
         String branch    = queryParam(ex, "branch");
-        List<Attendance> result = new ArrayList<>(Database.attendance);
-        if (studentId != null) result = result.stream().filter(a -> a.studentId.equals(studentId)).collect(Collectors.toList());
-        if (year      != null) result = result.stream().filter(a -> a.year.equals(year)).collect(Collectors.toList());
-        if (branch    != null) result = result.stream().filter(a -> a.branch.equals(branch)).collect(Collectors.toList());
-        sendJson(ex, 200, Json.arr(result.stream().map(AttendanceHandler::toJson).collect(Collectors.toList())));
+
+        StringBuilder sql = new StringBuilder("SELECT * FROM attendance WHERE 1=1");
+        List<String> params = new ArrayList<>();
+        if (studentId != null) { sql.append(" AND student_id=?");   params.add(studentId); }
+        if (year      != null) { sql.append(" AND year=?");         params.add(year); }
+        if (branch    != null) { sql.append(" AND branch=?");       params.add(branch); }
+
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            for (int i = 0; i < params.size(); i++) ps.setString(i + 1, params.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                List<String> rows = new ArrayList<>();
+                while (rs.next()) rows.add(toJson(rs));
+                sendJson(ex, 200, Json.arr(rows));
+            }
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
     private void handleCreate(HttpExchange ex) throws IOException {
         Map<String, String> body = Json.parse(readBody(ex));
-        Attendance a = new Attendance();
-        a.id = Database.attendanceIdSeq.getAndIncrement();
-        a.studentId = Json.get(body,"studentId"); a.studentName = Json.get(body,"studentName");
-        a.date = Json.get(body,"date"); a.subject = Json.get(body,"subject");
-        a.status = Json.get(body,"status"); a.year = Json.get(body,"year"); a.branch = Json.get(body,"branch");
-        Database.attendance.add(a);
-        sendJson(ex, 200, toJson(a));
+        String sql = "INSERT INTO attendance (student_id,student_name,date,subject,status,year,branch) VALUES (?,?,?,?,?,?,?)";
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setString(1, Json.get(body,"studentId"));
+            ps.setString(2, Json.get(body,"studentName"));
+            ps.setString(3, Json.get(body,"date"));
+            ps.setString(4, Json.get(body,"subject"));
+            ps.setString(5, Json.get(body,"status"));
+            ps.setString(6, Json.get(body,"year"));
+            ps.setString(7, Json.get(body,"branch"));
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                keys.next();
+                long newId = keys.getLong(1);
+                try (PreparedStatement sel = c.prepareStatement("SELECT * FROM attendance WHERE id=?")) {
+                    sel.setLong(1, newId);
+                    try (ResultSet rs = sel.executeQuery()) { rs.next(); sendJson(ex, 200, toJson(rs)); }
+                }
+            }
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
     private void handleDelete(HttpExchange ex) throws IOException {
         long id = pathId(ex);
-        boolean removed = Database.attendance.removeIf(a -> a.id == id);
-        sendJson(ex, 200, Json.obj("success", Json.bool(removed), "message", Json.str(removed ? "Deleted" : "Not found")));
+        try (Connection c = Database.getConnection();
+             PreparedStatement ps = c.prepareStatement("DELETE FROM attendance WHERE id=?")) {
+            ps.setLong(1, id);
+            boolean removed = ps.executeUpdate() > 0;
+            sendJson(ex, 200, Json.obj("success", Json.bool(removed), "message", Json.str(removed ? "Deleted" : "Not found")));
+        } catch (SQLException e) {
+            sendJson(ex, 500, Json.obj("success", Json.bool(false), "message", Json.str("DB error: " + e.getMessage())));
+        }
     }
 
-    public static String toJson(Attendance a) {
+    public static String toJson(ResultSet rs) throws SQLException {
         return Json.obj(
-            "id",          Json.num(a.id),
-            "studentId",   Json.str(a.studentId),
-            "studentName", Json.str(a.studentName),
-            "date",        Json.str(a.date),
-            "subject",     Json.str(a.subject),
-            "status",      Json.str(a.status),
-            "year",        Json.str(a.year),
-            "branch",      Json.str(a.branch)
+            "id",          Json.num(rs.getLong("id")),
+            "studentId",   Json.str(rs.getString("student_id")),
+            "studentName", Json.str(rs.getString("student_name")),
+            "date",        Json.str(rs.getString("date")),
+            "subject",     Json.str(rs.getString("subject")),
+            "status",      Json.str(rs.getString("status")),
+            "year",        Json.str(rs.getString("year")),
+            "branch",      Json.str(rs.getString("branch"))
         );
     }
 }
